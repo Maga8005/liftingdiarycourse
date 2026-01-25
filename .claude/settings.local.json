@@ -7,7 +7,10 @@
       "mcp__neon__get_database_tables",
       "mcp__neon__describe_table_schema",
       "mcp__neon__run_sql_transaction",
-      "Bash(npx shadcn@latest add:*)"
+      "Bash(npx shadcn@latest add:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(npm run lint)"
     ]
   }
 }

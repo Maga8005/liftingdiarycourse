@@ -2,6 +2,22 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## IMPORTANT: Documentation First
+
+**ALWAYS refer to the relevant documentation files in the `/docs` directory BEFORE generating any code.**
+
+The `/docs` directory contains coding standards and guidelines that MUST be followed:
+
+- `docs/ui.md` - UI component standards (shadcn/ui only, date formatting)
+- Additional docs files as they are created
+
+**Workflow:**
+1. Identify which docs are relevant to the task
+2. Read and understand the standards defined in those docs
+3. Generate code that strictly adheres to those standards
+
+Failure to follow documentation standards will result in non-compliant code.
+
 ## Project Overview
 
 Lifting Diary - A workout tracking application built with Next.js 16 using the App Router pattern.

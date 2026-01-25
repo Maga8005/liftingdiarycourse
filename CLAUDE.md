@@ -9,7 +9,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 The `/docs` directory contains coding standards and guidelines that MUST be followed:
 
 - `docs/ui.md` - UI component standards (shadcn/ui only, date formatting)
-- Additional docs files as they are created
+- `docs/data-fetching.md` - Data fetching standards (Server Components only, Drizzle ORM, user data isolation)
 
 **Workflow:**
 1. Identify which docs are relevant to the task

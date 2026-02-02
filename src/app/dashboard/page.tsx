@@ -3,8 +3,8 @@ import { auth } from "@clerk/nextjs/server";
 import { format } from "date-fns";
 
 import { getWorkoutsByDate } from "@/data/workouts";
-import { WorkoutCalendar } from "@/components/dashboard/workout-calendar";
-import { WorkoutList } from "@/components/dashboard/workout-list";
+import { WorkoutCalendar } from "./components/workout-calendar";
+import { WorkoutList } from "./components/workout-list";
 
 interface DashboardPageProps {
   searchParams: Promise<{ date?: string }>;

@@ -10,6 +10,8 @@ The `/docs` directory contains coding standards and guidelines that MUST be foll
 
 - `docs/ui.md` - UI component standards (shadcn/ui only, date formatting)
 - `docs/data-fetching.md` - Data fetching standards (Server Components only, Drizzle ORM, user data isolation)
+- `docs/data-mutations.md` - Data mutation standards (Server Actions, Zod validation, typed parameters)
+- `docs/auth.md` - Authentication standards (Clerk only, protected routes, user verification)
 
 **Workflow:**
 1. Identify which docs are relevant to the task

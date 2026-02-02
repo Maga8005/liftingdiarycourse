@@ -1,5 +1,5 @@
-import { db } from "@/src/db";
-import { workouts } from "@/src/db/schema";
+import { db } from "@/db";
+import { workouts, type NewWorkout } from "@/db/schema";
 import { eq, and, gte, lt } from "drizzle-orm";
 
 export type WorkoutWithExercises = {
@@ -98,4 +98,24 @@ export async function getWorkoutById(
       order: we.order,
     })),
   };
+}
+
+/**
+ * Create a new workout for a specific user.
+ * SECURITY: Always associates the workout with the authenticated userId.
+ */
+export async function createWorkout(
+  userId: string,
+  data: { name?: string; startedAt: Date }
+): Promise<{ id: number }> {
+  const [result] = await db
+    .insert(workouts)
+    .values({
+      clerkUserId: userId,
+      name: data.name || null,
+      startedAt: data.startedAt,
+    })
+    .returning({ id: workouts.id });
+
+  return result;
 }

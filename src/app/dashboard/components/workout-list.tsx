@@ -1,6 +1,8 @@
+import Link from "next/link";
 import { format } from "date-fns";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import type { WorkoutWithExercises } from "@/data/workouts";
 
 interface WorkoutListProps {
@@ -11,10 +13,13 @@ export function WorkoutList({ workouts }: WorkoutListProps) {
   if (workouts.length === 0) {
     return (
       <Card>
-        <CardContent className="pt-6">
+        <CardContent className="pt-6 flex flex-col items-center gap-4">
           <p className="text-muted-foreground text-center">
             No workouts logged for this date.
           </p>
+          <Button asChild>
+            <Link href="/dashboard/workout/new">Log New Workout</Link>
+          </Button>
         </CardContent>
       </Card>
     );

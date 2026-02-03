@@ -36,37 +36,43 @@ export function WorkoutList({ workouts }: WorkoutListProps) {
           : null;
 
         return (
-          <Card key={workout.id}>
-            <CardContent className="pt-4">
-              <div className="flex justify-between items-start mb-3">
-                <h3 className="font-semibold text-lg">
-                  {workout.name || "Workout"}
-                </h3>
-                <span className="text-sm text-muted-foreground">
-                  {format(workout.startedAt, "h:mm a")}
-                </span>
-              </div>
-              {workout.exercises.length > 0 && (
-                <div className="flex flex-wrap gap-2 mb-3">
-                  {workout.exercises.map((exercise) => (
-                    <Badge key={exercise.id} variant="secondary">
-                      {exercise.name}
-                    </Badge>
-                  ))}
+          <Link
+            key={workout.id}
+            href={`/dashboard/workout/${workout.id}`}
+            className="block transition-transform hover:scale-[1.02]"
+          >
+            <Card className="cursor-pointer hover:shadow-lg transition-shadow">
+              <CardContent className="pt-4">
+                <div className="flex justify-between items-start mb-3">
+                  <h3 className="font-semibold text-lg">
+                    {workout.name || "Workout"}
+                  </h3>
+                  <span className="text-sm text-muted-foreground">
+                    {format(workout.startedAt, "h:mm a")}
+                  </span>
                 </div>
-              )}
-              {duration !== null && (
-                <p className="text-sm text-muted-foreground">
-                  Duration: {duration} min
-                </p>
-              )}
-              {workout.completedAt === null && (
-                <Badge variant="outline" className="mt-2">
-                  In Progress
-                </Badge>
-              )}
-            </CardContent>
-          </Card>
+                {workout.exercises.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    {workout.exercises.map((exercise) => (
+                      <Badge key={exercise.id} variant="secondary">
+                        {exercise.name}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+                {duration !== null && (
+                  <p className="text-sm text-muted-foreground">
+                    Duration: {duration} min
+                  </p>
+                )}
+                {workout.completedAt === null && (
+                  <Badge variant="outline" className="mt-2">
+                    In Progress
+                  </Badge>
+                )}
+              </CardContent>
+            </Card>
+          </Link>
         );
       })}
     </div>

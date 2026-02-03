@@ -119,3 +119,30 @@ export async function createWorkout(
 
   return result;
 }
+
+/**
+ * Update an existing workout for a specific user.
+ * SECURITY: Always filters by userId to ensure users can only modify their own data.
+ */
+export async function updateWorkout(
+  userId: string,
+  workoutId: number,
+  data: { name?: string; startedAt: Date }
+): Promise<{ id: number } | null> {
+  const [result] = await db
+    .update(workouts)
+    .set({
+      name: data.name || null,
+      startedAt: data.startedAt,
+      updatedAt: new Date(),
+    })
+    .where(
+      and(
+        eq(workouts.id, workoutId),
+        eq(workouts.clerkUserId, userId)
+      )
+    )
+    .returning({ id: workouts.id });
+
+  return result ?? null;
+}

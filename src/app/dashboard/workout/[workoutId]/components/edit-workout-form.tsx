@@ -18,7 +18,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { cn } from "@/lib/utils";
-import { createWorkoutAction, type CreateWorkoutInput } from "../actions";
+import { updateWorkoutAction, type UpdateWorkoutInput } from "../actions";
 
 const formSchema = z.object({
   name: z.string().max(255, "Name is too long").optional(),
@@ -27,25 +27,30 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-interface WorkoutFormProps {
-  defaultDate?: Date;
+interface EditWorkoutFormProps {
+  workout: {
+    id: number;
+    name: string | null;
+    startedAt: Date;
+  };
 }
 
-export function WorkoutForm({ defaultDate }: WorkoutFormProps) {
+export function EditWorkoutForm({ workout }: EditWorkoutFormProps) {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: "",
-      startedAt: defaultDate ?? new Date(),
+      name: workout.name ?? "",
+      startedAt: workout.startedAt,
     },
   });
 
   async function onSubmit(data: FormValues) {
-    const params: CreateWorkoutInput = {
+    const params: UpdateWorkoutInput = {
+      id: workout.id,
       name: data.name || undefined,
       startedAt: data.startedAt,
     };
-    await createWorkoutAction(params);
+    await updateWorkoutAction(params);
   }
 
   return (
@@ -104,7 +109,7 @@ export function WorkoutForm({ defaultDate }: WorkoutFormProps) {
         />
 
         <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
-          {form.formState.isSubmitting ? "Creating..." : "Create Workout"}
+          {form.formState.isSubmitting ? "Saving..." : "Save Changes"}
         </Button>
       </form>
     </Form>

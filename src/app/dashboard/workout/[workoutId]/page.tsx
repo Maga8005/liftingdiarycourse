@@ -1,27 +1,37 @@
-import { redirect } from "next/navigation";
+import { redirect, notFound } from "next/navigation";
 import { auth } from "@clerk/nextjs/server";
 import Link from "next/link";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { WorkoutForm } from "./components/workout-form";
+import { getWorkoutById } from "@/data/workouts";
+import { EditWorkoutForm } from "./components/edit-workout-form";
 
-interface NewWorkoutPageProps {
-  searchParams: Promise<{ date?: string }>;
+interface EditWorkoutPageProps {
+  params: Promise<{ workoutId: string }>;
 }
 
-export default async function NewWorkoutPage({
-  searchParams,
-}: NewWorkoutPageProps) {
+export default async function EditWorkoutPage({
+  params,
+}: EditWorkoutPageProps) {
   const { userId } = await auth();
 
   if (!userId) {
     redirect("/sign-in");
   }
 
-  const params = await searchParams;
-  const defaultDate = params.date ? new Date(params.date + "T00:00:00") : new Date();
-  const validDate = isNaN(defaultDate.getTime()) ? new Date() : defaultDate;
+  const { workoutId } = await params;
+  const workoutIdNum = parseInt(workoutId, 10);
+
+  if (isNaN(workoutIdNum)) {
+    notFound();
+  }
+
+  const workout = await getWorkoutById(workoutIdNum, userId);
+
+  if (!workout) {
+    notFound();
+  }
 
   return (
     <div className="container mx-auto p-6 max-w-md">
@@ -33,10 +43,10 @@ export default async function NewWorkoutPage({
 
       <Card>
         <CardHeader>
-          <CardTitle>New Workout</CardTitle>
+          <CardTitle>Edit Workout</CardTitle>
         </CardHeader>
         <CardContent>
-          <WorkoutForm defaultDate={validDate} />
+          <EditWorkoutForm workout={workout} />
         </CardContent>
       </Card>
     </div>

@@ -10,6 +10,7 @@ import {
 } from "@clerk/nextjs";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { Header } from "@/components/header";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -44,16 +45,7 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
-            <header className="flex justify-end items-center p-4 gap-4">
-              <SignedOut>
-                <SignInButton mode="modal" />
-                <SignUpButton mode="modal" />
-              </SignedOut>
-              <SignedIn>
-                <ThemeToggle />
-                <UserButton />
-              </SignedIn>
-            </header>
+            <Header />
             {children}
           </ThemeProvider>
         </body>

@@ -12,6 +12,7 @@ The `/docs` directory contains coding standards and guidelines that MUST be foll
 - `docs/data-fetching.md` - Data fetching standards (Server Components only, Drizzle ORM, user data isolation)
 - `docs/data-mutations.md` - Data mutation standards (Server Actions, Zod validation, typed parameters)
 - `docs/auth.md` - Authentication standards (Clerk only, protected routes, user verification)
+- `docs/server-components.md` - Server Component standards (async params/searchParams must be awaited)
 
 **Workflow:**
 1. Identify which docs are relevant to the task

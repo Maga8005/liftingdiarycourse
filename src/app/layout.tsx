@@ -2,10 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import {
   ClerkProvider,
-  SignInButton,
-  SignUpButton,
   SignedIn,
-  SignedOut,
   UserButton,
 } from "@clerk/nextjs";
 import { ThemeProvider } from "@/components/theme-provider";
@@ -44,16 +41,12 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
-            <header className="flex justify-end items-center p-4 gap-4">
-              <SignedOut>
-                <SignInButton mode="modal" />
-                <SignUpButton mode="modal" />
-              </SignedOut>
-              <SignedIn>
+            <SignedIn>
+              <header className="flex justify-end items-center p-4 gap-4">
                 <ThemeToggle />
                 <UserButton />
-              </SignedIn>
-            </header>
+              </header>
+            </SignedIn>
             {children}
           </ThemeProvider>
         </body>

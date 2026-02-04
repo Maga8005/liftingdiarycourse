@@ -132,13 +132,11 @@ export function EditWorkoutForm({ workout, availableExercises }: EditWorkoutForm
   }
 
   const toggleExercise = (exerciseId: number) => {
-    setSelectedExercises((prev) => {
-      const newSelected = prev.includes(exerciseId)
-        ? prev.filter((id) => id !== exerciseId)
-        : [...prev, exerciseId];
-      form.setValue("exerciseIds", newSelected);
-      return newSelected;
-    });
+    const newSelected = selectedExercises.includes(exerciseId)
+      ? selectedExercises.filter((id) => id !== exerciseId)
+      : [...selectedExercises, exerciseId];
+    setSelectedExercises(newSelected);
+    form.setValue("exerciseIds", newSelected);
   };
 
   return (

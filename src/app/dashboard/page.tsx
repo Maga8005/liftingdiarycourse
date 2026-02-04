@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@clerk/nextjs/server";
-import { Plus } from "lucide-react";
+import { format } from "date-fns";
 
 import { getWorkoutsByDate } from "@/data/workouts";
 import { WorkoutCalendar } from "./components/workout-calendar";
@@ -32,23 +32,21 @@ export default async function DashboardPage({
 
   return (
     <div className="container mx-auto p-6 max-w-2xl">
-      <div className="flex items-center justify-between mb-8">
-        <h1 className="text-3xl font-bold">Workout Dashboard</h1>
-        <Button asChild>
-          <Link href="/dashboard/workout/new">
-            <Plus className="mr-2 h-4 w-4" />
-            Log New Workout
-          </Link>
-        </Button>
-      </div>
+      <h1 className="text-3xl font-bold mb-6">Workout Dashboard</h1>
 
-      <div>
-        <div className="flex items-center gap-3 mb-4">
-          <h2 className="text-lg font-medium">Workouts for</h2>
+      <div className="flex flex-wrap items-center gap-4 mb-6">
+        <h2 className="text-lg font-medium">
+          Workouts for {format(validDate, "do MMM yyyy")}
+        </h2>
+        <div className="flex items-center gap-2 ml-auto">
+          <Button variant="outline" asChild>
+            <Link href="/dashboard/workout/new">Log New Workout</Link>
+          </Button>
           <WorkoutCalendar selectedDate={validDate} />
         </div>
-        <WorkoutList workouts={workouts} />
       </div>
+
+      <WorkoutList workouts={workouts} />
     </div>
   );
 }

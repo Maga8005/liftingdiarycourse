@@ -38,7 +38,7 @@ export function WorkoutCalendar({ selectedDate }: WorkoutCalendarProps) {
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button variant="outline" className="w-full justify-start text-left">
+        <Button variant="outline">
           <CalendarIcon className="mr-2 h-4 w-4" />
           {format(selectedDate, "do MMM yyyy")}
         </Button>

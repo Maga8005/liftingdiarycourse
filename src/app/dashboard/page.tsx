@@ -1,10 +1,12 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@clerk/nextjs/server";
-import { format } from "date-fns";
+import { Plus } from "lucide-react";
 
 import { getWorkoutsByDate } from "@/data/workouts";
 import { WorkoutCalendar } from "./components/workout-calendar";
 import { WorkoutList } from "./components/workout-list";
+import { Button } from "@/components/ui/button";
 
 interface DashboardPageProps {
   searchParams: Promise<{ date?: string }>;
@@ -30,15 +32,21 @@ export default async function DashboardPage({
 
   return (
     <div className="container mx-auto p-6 max-w-2xl">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+      <div className="flex items-center justify-between mb-8">
         <h1 className="text-3xl font-bold">Workout Dashboard</h1>
-        <WorkoutCalendar selectedDate={validDate} />
+        <Button asChild>
+          <Link href="/dashboard/workout/new">
+            <Plus className="mr-2 h-4 w-4" />
+            Log New Workout
+          </Link>
+        </Button>
       </div>
 
       <div>
-        <h2 className="text-lg font-medium mb-4">
-          Workouts for {format(validDate, "do MMM yyyy")}
-        </h2>
+        <div className="flex items-center gap-3 mb-4">
+          <h2 className="text-lg font-medium">Workouts for</h2>
+          <WorkoutCalendar selectedDate={validDate} />
+        </div>
         <WorkoutList workouts={workouts} />
       </div>
     </div>

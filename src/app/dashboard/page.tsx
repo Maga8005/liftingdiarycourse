@@ -29,23 +29,17 @@ export default async function DashboardPage({
   const workouts = await getWorkoutsByDate(userId, validDate);
 
   return (
-    <div className="container mx-auto p-6 max-w-4xl">
-      <h1 className="text-3xl font-bold mb-8">Workout Dashboard</h1>
+    <div className="container mx-auto p-6 max-w-2xl">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+        <h1 className="text-3xl font-bold">Workout Dashboard</h1>
+        <WorkoutCalendar selectedDate={validDate} />
+      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        {/* Left column - Calendar */}
-        <div>
-          <h2 className="text-lg font-medium mb-4">Select Date</h2>
-          <WorkoutCalendar selectedDate={validDate} />
-        </div>
-
-        {/* Right column - Workouts */}
-        <div>
-          <h2 className="text-lg font-medium mb-4">
-            Workouts for {format(validDate, "do MMM yyyy")}
-          </h2>
-          <WorkoutList workouts={workouts} />
-        </div>
+      <div>
+        <h2 className="text-lg font-medium mb-4">
+          Workouts for {format(validDate, "do MMM yyyy")}
+        </h2>
+        <WorkoutList workouts={workouts} />
       </div>
     </div>
   );

@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { format } from "date-fns";
 import { useState, useMemo, useCallback } from "react";
+import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -123,6 +124,7 @@ function getInitialDuration(startedAt: Date, completedAt: Date | null): number |
 }
 
 export function EditWorkoutForm({ workout, availableExercises }: EditWorkoutFormProps) {
+  const router = useRouter();
   const [selectedExercises, setSelectedExercises] = useState<number[]>(
     workout.exercises.map((e) => e.id)
   );
@@ -489,9 +491,19 @@ export function EditWorkoutForm({ workout, availableExercises }: EditWorkoutForm
           )}
         />
 
-        <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
-          {form.formState.isSubmitting ? "Saving..." : "Save Changes"}
-        </Button>
+        <div className="space-y-2">
+          <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
+            {form.formState.isSubmitting ? "Saving..." : "Save Changes"}
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full"
+            onClick={() => router.push("/dashboard")}
+          >
+            Cancel
+          </Button>
+        </div>
       </form>
     </Form>
   );

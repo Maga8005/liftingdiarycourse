@@ -4,13 +4,21 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { format } from "date-fns";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Calendar } from "@/components/ui/calendar";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Form,
   FormControl,
@@ -27,8 +35,11 @@ import type { ExerciseOption } from "@/data/exercises";
 const formSchema = z.object({
   name: z.string().max(255, "Name is too long").optional(),
   date: z.date(),
-  startTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, "Invalid time format"),
-  endTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, "Invalid time format").optional().or(z.literal("")),
+  startHour: z.string(),
+  startMinute: z.string(),
+  endHour: z.string().optional(),
+  endMinute: z.string().optional(),
+  durationMinutes: z.number().min(0).optional(),
   exerciseIds: z.array(z.number()),
 });
 
@@ -45,66 +56,114 @@ interface EditWorkoutFormProps {
   availableExercises: ExerciseOption[];
 }
 
-function formatTime(date: Date): string {
-  return format(date, "HH:mm");
+// Generate hour options (00-23)
+const hourOptions = Array.from({ length: 24 }, (_, i) =>
+  i.toString().padStart(2, "0")
+);
+
+// Generate minute options (00, 05, 10, ..., 55)
+const minuteOptions = Array.from({ length: 12 }, (_, i) =>
+  (i * 5).toString().padStart(2, "0")
+);
+
+// Quick duration options in minutes
+const quickDurations = [30, 45, 60, 75, 90, 120];
+
+function calculateDurationFromTimes(
+  startHour: string,
+  startMinute: string,
+  endHour?: string,
+  endMinute?: string
+): number | null {
+  if (!endHour || !endMinute) return null;
+
+  const startTotal = parseInt(startHour) * 60 + parseInt(startMinute);
+  const endTotal = parseInt(endHour) * 60 + parseInt(endMinute);
+
+  let duration = endTotal - startTotal;
+  if (duration < 0) duration += 24 * 60; // Handle crossing midnight
+
+  return duration;
 }
 
-function combineDateAndTime(date: Date, time: string): Date {
-  const [hours, minutes] = time.split(":").map(Number);
-  const result = new Date(date);
-  result.setHours(hours, minutes, 0, 0);
-  return result;
-}
-
-function calculateDuration(startTime: string, endTime: string | undefined): string | null {
-  if (!endTime) return null;
-
-  const [startHours, startMinutes] = startTime.split(":").map(Number);
-  const [endHours, endMinutes] = endTime.split(":").map(Number);
-
-  let totalMinutes = (endHours * 60 + endMinutes) - (startHours * 60 + startMinutes);
+function calculateEndTimeFromDuration(
+  startHour: string,
+  startMinute: string,
+  durationMinutes: number
+): { hour: string; minute: string } {
+  const startTotal = parseInt(startHour) * 60 + parseInt(startMinute);
+  let endTotal = startTotal + durationMinutes;
 
   // Handle crossing midnight
-  if (totalMinutes < 0) {
-    totalMinutes += 24 * 60;
-  }
+  if (endTotal >= 24 * 60) endTotal -= 24 * 60;
 
-  if (totalMinutes === 0) return null;
+  const hour = Math.floor(endTotal / 60).toString().padStart(2, "0");
+  const minute = (endTotal % 60).toString().padStart(2, "0");
 
-  const hours = Math.floor(totalMinutes / 60);
-  const minutes = totalMinutes % 60;
+  return { hour, minute };
+}
 
-  if (hours > 0 && minutes > 0) {
-    return `${hours}h ${minutes}min`;
+function formatDuration(minutes: number): string {
+  const hours = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+
+  if (hours > 0 && mins > 0) {
+    return `${hours}h ${mins}min`;
   } else if (hours > 0) {
     return `${hours}h`;
   } else {
-    return `${minutes} min`;
+    return `${mins} min`;
   }
+}
+
+function getInitialDuration(startedAt: Date, completedAt: Date | null): number | null {
+  if (!completedAt) return null;
+  const diff = completedAt.getTime() - startedAt.getTime();
+  return Math.round(diff / (1000 * 60));
 }
 
 export function EditWorkoutForm({ workout, availableExercises }: EditWorkoutFormProps) {
   const [selectedExercises, setSelectedExercises] = useState<number[]>(
     workout.exercises.map((e) => e.id)
   );
+  const [timeMode, setTimeMode] = useState<"endTime" | "duration">(
+    workout.completedAt ? "endTime" : "duration"
+  );
+
+  const initialDuration = getInitialDuration(workout.startedAt, workout.completedAt);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: workout.name ?? "",
       date: workout.startedAt,
-      startTime: formatTime(workout.startedAt),
-      endTime: workout.completedAt ? formatTime(workout.completedAt) : "",
+      startHour: format(workout.startedAt, "HH"),
+      startMinute: format(workout.startedAt, "mm"),
+      endHour: workout.completedAt ? format(workout.completedAt, "HH") : undefined,
+      endMinute: workout.completedAt ? format(workout.completedAt, "mm") : undefined,
+      durationMinutes: initialDuration ?? undefined,
       exerciseIds: workout.exercises.map((e) => e.id),
     },
   });
 
-  const watchStartTime = form.watch("startTime");
-  const watchEndTime = form.watch("endTime");
+  const watchStartHour = form.watch("startHour");
+  const watchStartMinute = form.watch("startMinute");
+  const watchEndHour = form.watch("endHour");
+  const watchEndMinute = form.watch("endMinute");
+  const watchDuration = form.watch("durationMinutes");
 
-  const duration = useMemo(() => {
-    return calculateDuration(watchStartTime, watchEndTime);
-  }, [watchStartTime, watchEndTime]);
+  // Calculate displayed duration based on mode
+  const displayDuration = useMemo(() => {
+    if (timeMode === "duration" && watchDuration) {
+      return watchDuration;
+    }
+    return calculateDurationFromTimes(
+      watchStartHour,
+      watchStartMinute,
+      watchEndHour,
+      watchEndMinute
+    );
+  }, [timeMode, watchStartHour, watchStartMinute, watchEndHour, watchEndMinute, watchDuration]);
 
   // Group exercises by category
   const exercisesByCategory = useMemo(() => {
@@ -117,9 +176,44 @@ export function EditWorkoutForm({ workout, availableExercises }: EditWorkoutForm
     }, {} as Record<string, ExerciseOption[]>);
   }, [availableExercises]);
 
+  const handleDurationChange = useCallback((minutes: number) => {
+    form.setValue("durationMinutes", minutes);
+    const { hour, minute } = calculateEndTimeFromDuration(
+      form.getValues("startHour"),
+      form.getValues("startMinute"),
+      minutes
+    );
+    form.setValue("endHour", hour);
+    form.setValue("endMinute", minute);
+  }, [form]);
+
+  const handleEndTimeChange = useCallback((field: "endHour" | "endMinute", value: string) => {
+    form.setValue(field, value);
+    const endHour = field === "endHour" ? value : form.getValues("endHour");
+    const endMinute = field === "endMinute" ? value : form.getValues("endMinute");
+
+    if (endHour && endMinute) {
+      const duration = calculateDurationFromTimes(
+        form.getValues("startHour"),
+        form.getValues("startMinute"),
+        endHour,
+        endMinute
+      );
+      if (duration !== null) {
+        form.setValue("durationMinutes", duration);
+      }
+    }
+  }, [form]);
+
   async function onSubmit(data: FormValues) {
-    const startedAt = combineDateAndTime(data.date, data.startTime);
-    const completedAt = data.endTime ? combineDateAndTime(data.date, data.endTime) : null;
+    const startedAt = new Date(data.date);
+    startedAt.setHours(parseInt(data.startHour), parseInt(data.startMinute), 0, 0);
+
+    let completedAt: Date | null = null;
+    if (data.endHour && data.endMinute) {
+      completedAt = new Date(data.date);
+      completedAt.setHours(parseInt(data.endHour), parseInt(data.endMinute), 0, 0);
+    }
 
     const params: UpdateWorkoutInput = {
       id: workout.id,
@@ -194,39 +288,159 @@ export function EditWorkoutForm({ workout, availableExercises }: EditWorkoutForm
           )}
         />
 
-        <div className="grid grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="startTime"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Start Time</FormLabel>
-                <FormControl>
-                  <Input type="time" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="endTime"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>End Time (optional)</FormLabel>
-                <FormControl>
-                  <Input type="time" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+        {/* Start Time */}
+        <div className="space-y-2">
+          <FormLabel>Start Time</FormLabel>
+          <div className="flex gap-2 items-center">
+            <FormField
+              control={form.control}
+              name="startHour"
+              render={({ field }) => (
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <SelectTrigger className="w-20">
+                    <SelectValue placeholder="HH" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {hourOptions.map((hour) => (
+                      <SelectItem key={hour} value={hour}>
+                        {hour}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
+            <span className="text-lg font-medium">:</span>
+            <FormField
+              control={form.control}
+              name="startMinute"
+              render={({ field }) => (
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <SelectTrigger className="w-20">
+                    <SelectValue placeholder="MM" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {minuteOptions.map((minute) => (
+                      <SelectItem key={minute} value={minute}>
+                        {minute}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
+          </div>
         </div>
 
-        {duration && (
-          <div className="text-sm text-muted-foreground">
-            Duration: <span className="font-medium text-foreground">{duration}</span>
+        {/* End Time / Duration Tabs */}
+        <div className="space-y-2">
+          <FormLabel>End Time / Duration</FormLabel>
+          <Tabs value={timeMode} onValueChange={(v) => setTimeMode(v as "endTime" | "duration")}>
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="endTime">End Time</TabsTrigger>
+              <TabsTrigger value="duration">Duration</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="endTime" className="mt-3">
+              <div className="flex gap-2 items-center">
+                <FormField
+                  control={form.control}
+                  name="endHour"
+                  render={({ field }) => (
+                    <Select
+                      value={field.value ?? ""}
+                      onValueChange={(v) => handleEndTimeChange("endHour", v)}
+                    >
+                      <SelectTrigger className="w-20">
+                        <SelectValue placeholder="HH" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {hourOptions.map((hour) => (
+                          <SelectItem key={hour} value={hour}>
+                            {hour}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+                <span className="text-lg font-medium">:</span>
+                <FormField
+                  control={form.control}
+                  name="endMinute"
+                  render={({ field }) => (
+                    <Select
+                      value={field.value ?? ""}
+                      onValueChange={(v) => handleEndTimeChange("endMinute", v)}
+                    >
+                      <SelectTrigger className="w-20">
+                        <SelectValue placeholder="MM" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {minuteOptions.map((minute) => (
+                          <SelectItem key={minute} value={minute}>
+                            {minute}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    form.setValue("endHour", undefined);
+                    form.setValue("endMinute", undefined);
+                    form.setValue("durationMinutes", undefined);
+                  }}
+                >
+                  Clear
+                </Button>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="duration" className="mt-3 space-y-3">
+              <div className="flex flex-wrap gap-2">
+                {quickDurations.map((mins) => (
+                  <Button
+                    key={mins}
+                    type="button"
+                    variant={watchDuration === mins ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => handleDurationChange(mins)}
+                  >
+                    {formatDuration(mins)}
+                  </Button>
+                ))}
+              </div>
+              <div className="flex gap-2 items-center">
+                <Input
+                  type="number"
+                  placeholder="Custom minutes"
+                  className="w-32"
+                  value={watchDuration ?? ""}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (value === "") {
+                      form.setValue("durationMinutes", undefined);
+                      form.setValue("endHour", undefined);
+                      form.setValue("endMinute", undefined);
+                    } else {
+                      handleDurationChange(parseInt(value) || 0);
+                    }
+                  }}
+                />
+                <span className="text-sm text-muted-foreground">minutes</span>
+              </div>
+            </TabsContent>
+          </Tabs>
+        </div>
+
+        {displayDuration !== null && displayDuration > 0 && (
+          <div className="text-sm text-muted-foreground bg-muted/50 rounded-md p-3">
+            Duration: <span className="font-medium text-foreground">{formatDuration(displayDuration)}</span>
           </div>
         )}
 

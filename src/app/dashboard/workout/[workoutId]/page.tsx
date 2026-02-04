@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { getWorkoutById } from "@/data/workouts";
+import { getAllExercises } from "@/data/exercises";
 import { EditWorkoutForm } from "./components/edit-workout-form";
 
 interface EditWorkoutPageProps {
@@ -27,14 +28,17 @@ export default async function EditWorkoutPage({
     notFound();
   }
 
-  const workout = await getWorkoutById(workoutIdNum, userId);
+  const [workout, availableExercises] = await Promise.all([
+    getWorkoutById(workoutIdNum, userId),
+    getAllExercises(),
+  ]);
 
   if (!workout) {
     notFound();
   }
 
   return (
-    <div className="container mx-auto p-6 max-w-md">
+    <div className="container mx-auto p-6 max-w-2xl">
       <div className="mb-6">
         <Button variant="ghost" asChild>
           <Link href="/dashboard">Back to Dashboard</Link>
@@ -46,7 +50,10 @@ export default async function EditWorkoutPage({
           <CardTitle>Edit Workout</CardTitle>
         </CardHeader>
         <CardContent>
-          <EditWorkoutForm workout={workout} />
+          <EditWorkoutForm
+            workout={workout}
+            availableExercises={availableExercises}
+          />
         </CardContent>
       </Card>
     </div>

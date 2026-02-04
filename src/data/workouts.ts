@@ -1,5 +1,5 @@
 import { db } from "@/db";
-import { workouts, type NewWorkout } from "@/db/schema";
+import { workouts, workoutExercises } from "@/db/schema";
 import { eq, and, gte, lt } from "drizzle-orm";
 
 export type WorkoutWithExercises = {
@@ -127,13 +127,14 @@ export async function createWorkout(
 export async function updateWorkout(
   userId: string,
   workoutId: number,
-  data: { name?: string; startedAt: Date }
+  data: { name?: string; startedAt: Date; completedAt?: Date | null }
 ): Promise<{ id: number } | null> {
   const [result] = await db
     .update(workouts)
     .set({
       name: data.name || null,
       startedAt: data.startedAt,
+      completedAt: data.completedAt ?? null,
       updatedAt: new Date(),
     })
     .where(
@@ -145,4 +146,43 @@ export async function updateWorkout(
     .returning({ id: workouts.id });
 
   return result ?? null;
+}
+
+/**
+ * Update the exercises associated with a workout.
+ * Replaces all existing exercises with the new list.
+ * SECURITY: Verifies workout ownership before modifying.
+ */
+export async function updateWorkoutExercises(
+  userId: string,
+  workoutId: number,
+  exerciseIds: number[]
+): Promise<void> {
+  // First verify the workout belongs to the user
+  const workout = await db.query.workouts.findFirst({
+    where: and(
+      eq(workouts.id, workoutId),
+      eq(workouts.clerkUserId, userId)
+    ),
+  });
+
+  if (!workout) {
+    throw new Error("Workout not found or you don't have permission to edit it");
+  }
+
+  // Delete existing workout exercises
+  await db
+    .delete(workoutExercises)
+    .where(eq(workoutExercises.workoutId, workoutId));
+
+  // Insert new workout exercises with order
+  if (exerciseIds.length > 0) {
+    await db.insert(workoutExercises).values(
+      exerciseIds.map((exerciseId, index) => ({
+        workoutId,
+        exerciseId,
+        order: index + 1,
+      }))
+    );
+  }
 }

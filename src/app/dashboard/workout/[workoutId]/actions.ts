@@ -4,13 +4,15 @@ import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { updateWorkout } from "@/data/workouts";
+import { updateWorkout, updateWorkoutExercises } from "@/data/workouts";
 
 // Schema definitions
 const updateWorkoutSchema = z.object({
   id: z.coerce.number().int().positive("Invalid workout ID"),
   name: z.string().max(255, "Name is too long").optional(),
   startedAt: z.coerce.date(),
+  completedAt: z.coerce.date().optional().nullable(),
+  exerciseIds: z.array(z.number().int().positive()).optional(),
 });
 
 // Exported types for use in components
@@ -27,20 +29,26 @@ export async function updateWorkoutAction(params: UpdateWorkoutInput) {
     throw new Error("Unauthorized");
   }
 
-  // 3. Call data helper function
+  // 3. Call data helper function to update workout
   const result = await updateWorkout(userId, validated.id, {
     name: validated.name,
     startedAt: validated.startedAt,
+    completedAt: validated.completedAt,
   });
 
   if (!result) {
     throw new Error("Workout not found or you don't have permission to edit it");
   }
 
-  // 4. Revalidate cache
+  // 4. Update exercises if provided
+  if (validated.exerciseIds !== undefined) {
+    await updateWorkoutExercises(userId, validated.id, validated.exerciseIds);
+  }
+
+  // 5. Revalidate cache
   revalidatePath("/dashboard");
   revalidatePath(`/dashboard/workout/${validated.id}`);
 
-  // 5. Redirect to dashboard with the workout date
+  // 6. Redirect to dashboard with the workout date
   redirect(`/dashboard?date=${validated.startedAt.toISOString().split("T")[0]}`);
 }
